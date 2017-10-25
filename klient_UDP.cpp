@@ -14,8 +14,8 @@ using namespace std;
 
 #define BUFSIZE 1024
 
-string server = "150.254.32.150";	/* adres IP petli zwrotnej */
-short service_port = 1234;	/* port uslugi */
+string server = "150.254.32.151";	/* adres IP petli zwrotnej */
+short service_port = 41111;	/* port uslugi */
 
 
 int main(int argc, char *argv[]) {
@@ -25,11 +25,11 @@ int main(int argc, char *argv[]) {
 
     //std::cout<<
 
-    struct sockaddr_in sck_addr;
+    struct sockaddr_in sck_addr, stClientAddr;
     int answere[BUFSIZE];
     int question[BUFSIZE];
-    
-    int sck = socket(AF_INET , SOCK_STREAM, 0);
+
+    int sck = socket(AF_INET , SOCK_DGRAM, 0);
     memset (&sck_addr, 0, sizeof sck_addr);
     sck_addr.sin_family = AF_INET;
     inet_aton (&server[0], &sck_addr.sin_addr);
@@ -39,19 +39,20 @@ int main(int argc, char *argv[]) {
         perror ("Nie można utworzyć socketa");
         exit (EXIT_FAILURE);
     }
-    if(connect(sck, (struct sockaddr*) &sck_addr, sizeof sck_addr) == -1){
-        perror ("Brak połączenia");
-        exit (EXIT_FAILURE);
-    }
 
     cout<<"Podaj 2 liczby:"<<endl;
     cin>>question[0]>>question[1];
     std::cout<<question[1]<<" "<<question[0]<<std::endl;
-    write(sck, question, 2*sizeof(int));
+    if(sendto(sck, question, 2*sizeof(int), 0, (struct sockaddr*) &sck_addr, sizeof sck_addr) == -1){
+        perror ("Brak połączenia");
+        exit (EXIT_FAILURE);
+    }
 
-    while (read(sck, answere, sizeof(int)) > 0) {
+    socklen_t nTmp = sizeof(struct sockaddr);
+    while (recvfrom(sck, answere, sizeof(int), 0, (struct sockaddr*)&stClientAddr, &nTmp) > 0) {
         cout << answere[0]<<endl;
     }
+
     close(sck);
 
     return 0;

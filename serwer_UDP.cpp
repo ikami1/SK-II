@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     stAddr.sin_port = htons(SERVER_PORT);
 
     /* create a socket */
-    nSocket = socket(AF_INET, SOCK_STREAM, 0);
+    nSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (nSocket < 0){
         perror ("Can't create a socket.");
         exit (EXIT_FAILURE);
@@ -45,31 +45,20 @@ int main(int argc, char* argv[])
         perror ("Can't bind a name to a socket");
         exit (EXIT_FAILURE);
     }
-    /* specify queue size */
-    nListen = listen(nSocket, QUEUE_SIZE);
-    if (nListen < 0) {
-        fprintf(stderr, "%s: Can't set queue size.\n", argv[0]);
-    }
 
     while(1){
         nTmp = sizeof(struct sockaddr);
-        nClientSocket = accept(nSocket, (struct sockaddr*)&stClientAddr, &nTmp);
-        if (nClientSocket < 0)
-        {
-            fprintf(stderr, "%s: Can't create a connection's socket.\n", argv[0]);
-            exit(1);
-        }
 
         std::cout<<argv[0] << ": [connection from " << inet_ntoa((struct in_addr)stClientAddr.sin_addr)<<std::endl;
 
-
         int question[BUFSIZE];
-        read(nClientSocket, question, 2*sizeof(int));
+        recvfrom(nSocket, question, 2*sizeof(int), 0, (struct sockaddr*)&stClientAddr, &nTmp);
+
         std::cout<<"Dostalem liczby: "<<question[0]<<" i "<<question[1]<<std::endl;
         question[0] += question[1];
         std::cout<<"Zwracam "<<question[0]<<std::endl;
 
-        write(nClientSocket, question, sizeof(int));
+        sendto(nBind, question, sizeof(int), 0, (struct sockaddr*) &stClientAddr, sizeof stClientAddr);
 
         close(nClientSocket);
     }
